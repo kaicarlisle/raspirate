@@ -14,4 +14,6 @@ The `.env` file contains most of the configuration that should be needed - value
 - Run `docker compose up -d` (not `docker-compose`!)
 - Once you've connected to the SSID created, the web gui is available at http://10.3.141.1
 - 	PiHole is available at http://10.3.141.1:8080/admin
-- If there's 100%+ cpu utilisation, there's a bug with dhcpcd. Give it some restarts, that might help? (`sudo service dhcpcd restart`)
+- If there's 100%+ cpu utilisation, there's a bug with dhcpcd in the raspap container. 
+
+Give it some restarts, that might help? (`docker exec -it raspap bash` then `sudo service dhcpcd restart`)
