@@ -1,0 +1,89 @@
+version: "3.8"
+
+networks:
+  ${DOCKER_NETWORK}:
+    name: ${DOCKER_NETWORK}
+    ipam:
+      driver: default
+      config:
+        - subnet: ${SUBNET}.0/24
+          gateway: ${SUBNET}.${GATEWAY_IP}
+          ip_range: ${SUBNET}.0/24
+
+services:
+  raspap:
+    container_name: raspap
+    image: ghcr.io/raspap/raspap-docker:latest
+    privileged: true
+    depends_on:
+      - pihole
+      - unbound
+    network_mode: host
+    cgroup: host 
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+      - "./raspap/dnsmasq.d:/etc/dnsmasq.d:rw"
+      - "./raspap/dhcp_defaults.json:/etc/raspap/networking/defaults.json:rw"
+    environment:
+      RASPAP_SSID: ${SSID}
+      RASPAP_SSID_PASS: ${SSID_PASS}
+      RASPAP_COUNTRY: GB
+      RASPAP_hostapd_channel: 7
+      RASPAP_WEBGUI_USER: ${WEBUSER}
+      RASPAP_WEBGUI_PASS: ${WEBPASSWORD}
+    restart: unless-stopped
+
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    hostname: pihole.local
+    depends_on:
+      - unbound
+    ports:
+      - "8080:80/tcp"   # web ui
+      - "5300:53/tcp"   # DNS
+      - "5300:53/udp"   # DNS
+    volumes:
+      - "./pihole/pihole:/etc/pihole/"
+      - "./pihole/dnsmasq.d:/etc/dnsmasq.d/"
+    environment:
+      WEBPASSWORD: ${WEBPASSWORD}
+      FTLCONF_LOCAL_IPV4: ${HOST_IPV4_ADDRESS}
+      TZ: ${TIMEZONE}
+      PIHOLE_DNS_: ${SUBNET}.${UNBOUND_IP}#53
+      DNSSEC: true
+      WEBTHEME: default-dark
+    dns:
+      ${HOST_IPV4_ADDRESS}
+    networks:
+      ${DOCKER_NETWORK}:
+        ipv4_address: ${SUBNET}.${PIHOLE_IP}
+    restart: unless-stopped
+  
+  unbound:
+    container_name: unbound
+    image: mvance/unbound-rpi:latest
+    hostname: unbound.local
+    ports:
+      - "5335:53/tcp"
+      - "5335:53/udp"
+    volumes:
+      - "./unbound:/opt/unbound/etc/unbound"
+    networks:
+      ${DOCKER_NETWORK}:
+        ipv4_address: ${SUBNET}.${UNBOUND_IP}
+    restart: unless-stopped
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower:latest
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    # daily 3AM
+    command: --cleanup --schedule "0 0 3 * * *"
+    networks:
+      ${DOCKER_NETWORK}:
+        ipv4_address: ${SUBNET}.${WATCHTOWER_IP}
+    restart: unless-stopped
