@@ -12,4 +12,6 @@ The `.env` file contains most of the configuration that should be needed - value
 ### Notes
 
 - Run `docker compose up -d` (not `docker-compose`!)
-- Docker will look for volumes - you may need to create them
+- Once you've connected to the SSID created, the web gui is available at http://10.3.141.1
+- 	PiHole is available at http://10.3.141.1:8080/admin
+- If there's 100%+ cpu utilisation, there's a bug with dhcpcd. Give it some restarts, that might help? (`sudo service dhcpcd restart`)
