@@ -1,7 +1,7 @@
 version: "3.8"
 
 networks:
-  ${DOCKER_NETWORK}:
+  raspirate:
     name: ${DOCKER_NETWORK}
     ipam:
       driver: default
@@ -29,8 +29,8 @@ services:
     environment:
       RASPAP_SSID: ${SSID}
       RASPAP_SSID_PASS: ${SSID_PASS}
-      RASPAP_COUNTRY: GB
-      RASPAP_hostapd_channel: 7
+      RASPAP_COUNTRY: ${COUNTRY}
+      RASPAP_hostapd_channel: ${SSID_CHANNEL}
       RASPAP_WEBGUI_USER: ${WEBUSER}
       RASPAP_WEBGUI_PASS: ${WEBPASSWORD}
     restart: unless-stopped
@@ -58,7 +58,7 @@ services:
     dns:
       ${HOST_IPV4_ADDRESS}
     networks:
-      ${DOCKER_NETWORK}:
+      raspirate:
         ipv4_address: ${SUBNET}.${PIHOLE_IP}
     restart: unless-stopped
   
@@ -72,7 +72,7 @@ services:
     volumes:
       - "./unbound:/opt/unbound/etc/unbound"
     networks:
-      ${DOCKER_NETWORK}:
+      raspirate:
         ipv4_address: ${SUBNET}.${UNBOUND_IP}
     restart: unless-stopped
 
@@ -84,6 +84,6 @@ services:
     # daily 3AM
     command: --cleanup --schedule "0 0 3 * * *"
     networks:
-      ${DOCKER_NETWORK}:
+      raspirate:
         ipv4_address: ${SUBNET}.${WATCHTOWER_IP}
     restart: unless-stopped
